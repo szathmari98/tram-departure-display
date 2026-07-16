@@ -1,6 +1,6 @@
 # Tram Departure Display
 
-A Raspberry Pi Pico 2 WH powered desktop display showing real-time departures from a nearby BKK tram stop.
+A Raspberry Pi Pico 2 WH powered desktop display showing real-time departures from an optional BKK tram stop.
 
 ## Features
 
@@ -10,8 +10,6 @@ A Raspberry Pi Pico 2 WH powered desktop display showing real-time departures fr
 - Route number (planned)
 - Accessibility indicator (planned)
 - Automatic refresh (planned)
-- Raspberry Pi Pico 2 WH
-- ILI9341 SPI TFT display
 
 ## Hardware
 
