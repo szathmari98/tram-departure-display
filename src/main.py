@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 import requests
 import time
+from datetime import datetime
 
 load_dotenv()
 
@@ -11,8 +12,9 @@ endpoint = "https://futar.bkk.hu/api/query/v1/ws/otp/api/where/arrivals-and-depa
 becsi_ut_stopid = "BKK_F02743"
 kelenfold_stopid = "BKK_F02744"
 BKK_YELLOW = "\033[38;5;220m"
-PINK = "\033[95m"
 RESET = "\033[0m"
+BLUE = '\033[38;5;26m'
+last_successful_update = None
 
 def get_route_number(stop_time, references):
     trip_id = stop_time["tripId"]
@@ -42,7 +44,6 @@ def get_stop_times(stop_id):
 
     return {
     "stop_times": data["data"]["entry"]["stopTimes"],
-    "current_time": data["currentTime"] / 1000,
     "references": data["data"]["references"]
     }
 
@@ -75,10 +76,11 @@ def get_next_departures():
     
     all_departures = becsi_departures + kelenfold_departures
     all_departures.sort(key=lambda departure: departure["departure_time"])
-    return all_departures[:5], current_time
+    last_successful_update = datetime.now()
+    return all_departures[:5], current_time, last_successful_update
 
-def display_departures(departures, current_time):
-    os.system("cls")
+def display_departures(departures, current_time, last_successful_update):
+    print("\033[2J\033[H", end="")
     print(f"{BKK_YELLOW}JÁRAT   IRÁNY                           INDULÁS{RESET}")
     print(f"{BKK_YELLOW}------------------------------------------------{RESET}")
     for departure in departures:
@@ -104,22 +106,65 @@ def display_departures(departures, current_time):
         terminus_text = f'{terminus_text:<32}'
         departure_text = f'{departure_text:>8}'
         status_text = f'{status_text:<12}'
-
-        
-            
+ 
         txt = (
             f"{BKK_YELLOW}"
             f"{marker_text:<3}"
-            f'{departure["route_number"]:<5}'
-            f'{departure["terminus"]:<32}'
+            f'{route_text}'
+            f'{terminus_text}'
             f"{departure_text:>8} "
-            f"{status_text:<12}"
+            f"{status_text}"
             f"{RESET}"
         )
- 
         print(txt)
+    print(f"{BKK_YELLOW}R - Rita irány                  {RESET}", end="")
+    print(f"{BKK_YELLOW}A - akadálymentesített{RESET}")
+    print(f"{BLUE}Frissítve: {last_successful_update.strftime("%H:%M:%S")} {RESET}")
+
+def display_error(message, last_successful_update):
+    print("\033[2J\033[H", end="")
+    print("BKK KIJELZŐ")
+    print("------------")
+    print(message)
+    print("Újrapróbálkozás...")
+    if last_successful_update:
+        print(f'Az utolsó frissítés: {last_successful_update.strftime("%H:%M:%S")}')
+    else: 
+        print("Még nem történt sikeres frissítés.")
 
 while True:
-    next_departures, current_time = get_next_departures()
-    display_departures(departures=next_departures,current_time=current_time)
-    time.sleep(10)
+    try:
+        next_departures, current_time, last_successful_update = get_next_departures()
+        display_departures(
+            departures=next_departures,
+            current_time=current_time,
+            last_successful_update=last_successful_update
+        )
+    except requests.exceptions.Timeout:
+        display_error(
+            message="A BKK API nem válaszolt időben.",
+            last_successful_update=last_successful_update
+            )
+
+    except requests.exceptions.ConnectionError:
+        display_error(
+            message="Nincs hálózati kapcsolat.",
+            last_successful_update=last_successful_update
+            )
+
+    except requests.exceptions.HTTPError as error:
+        display_error(
+            message=f"HTTP-hiba történt: {error}",
+            last_successful_update=last_successful_update
+            )
+
+    except Exception as error:
+        display_error(
+            message=f"Váratlan hiba történt: {type(error).__name__}: {error}",
+            last_successful_update=last_successful_update
+        )
+    except KeyboardInterrupt:
+        print("\nA kijelző leállítva.")
+        break
+
+    time.sleep(15)
