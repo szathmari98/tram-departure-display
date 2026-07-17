@@ -10,6 +10,9 @@ SECRET_KEY = os.getenv("BKK_API_KEY")
 endpoint = "https://futar.bkk.hu/api/query/v1/ws/otp/api/where/arrivals-and-departures-for-stop.json"
 becsi_ut_stopid = "BKK_F02743"
 kelenfold_stopid = "BKK_F02744"
+BKK_YELLOW = "\033[38;5;220m"
+PINK = "\033[95m"
+RESET = "\033[0m"
 
 def get_route_number(stop_time, references):
     trip_id = stop_time["tripId"]
@@ -76,17 +79,43 @@ def get_next_departures():
 
 def display_departures(departures, current_time):
     os.system("cls")
+    print(f"{BKK_YELLOW}JÁRAT   IRÁNY                           INDULÁS{RESET}")
+    print(f"{BKK_YELLOW}------------------------------------------------{RESET}")
     for departure in departures:
         minutes_until_departure = round((departure["departure_time"] - current_time) / 60)
-        icon = ""
+
+        marker_text = ""
+        if departure["terminus"] in (
+        "Kelenföld vasútállomás M",
+        "Népliget M",
+        ):
+            marker_text += "R"
+        route_text = departure["route_number"]
+        terminus_text = departure["terminus"]
+        status_text = "(élő)" if departure["is_predicted"] else "(menetrendi)"
         if departure["wheelchair_accessible"]:
-            icon = "♿"
-        if departure["is_predicted"]:
-            status = "(becsült)"
+            marker_text += "A"
+        if minutes_until_departure <= 0:
+            departure_text = "MOST"
         else:
-            status = "(menetrendi)"
+            departure_text = f"{minutes_until_departure} perc"
+
+        route_text = f'{route_text:<4}'
+        terminus_text = f'{terminus_text:<32}'
+        departure_text = f'{departure_text:>8}'
+        status_text = f'{status_text:<12}'
+
+        
             
-        txt = f'{departure["route_number"]} - {departure["terminus"]} - {minutes_until_departure} perc múlva {status} {icon}'
+        txt = (
+            f"{BKK_YELLOW}"
+            f"{marker_text:<3}"
+            f'{departure["route_number"]:<5}'
+            f'{departure["terminus"]:<32}'
+            f"{departure_text:>8} "
+            f"{status_text:<12}"
+            f"{RESET}"
+        )
  
         print(txt)
 
