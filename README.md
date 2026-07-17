@@ -7,9 +7,9 @@ A Raspberry Pi Pico 2 WH powered desktop display showing real-time departures fr
 - Live BKK FUTÁR API integration
 - Real-time departure predictions
 - Dual direction display
-- Route number (planned)
+- Route number
 - Accessibility indicator (planned)
-- Automatic refresh (planned)
+- Automatic refresh
 
 ## Hardware
 
