@@ -56,7 +56,8 @@ def create_departures(stop_data):
             "route_number": get_route_number(stop_time=stop_time, references=stop_data["references"]),
             "departure_time": get_departure_time(stop_time),
             "terminus": stop_time["stopHeadsign"],
-            "is_predicted": "predictedDepartureTime" in stop_time
+            "is_predicted": "predictedDepartureTime" in stop_time,
+            "wheelchair_accessible": stop_time["wheelchairAccessible"]
         }
         departures.append(departure)
     return departures
@@ -77,16 +78,19 @@ def display_departures(departures, current_time):
     os.system("cls")
     for departure in departures:
         minutes_until_departure = round((departure["departure_time"] - current_time) / 60)
-
+        icon = ""
+        if departure["wheelchair_accessible"]:
+            icon = "♿"
         if departure["is_predicted"]:
-            txt = f'{departure["route_number"]} - {departure["terminus"]} - {minutes_until_departure} perc múlva (becsült)'
+            status = "(becsült)"
         else:
-            txt = f'{departure["route_number"]} - {departure["terminus"]} - {minutes_until_departure} perc múlva (menetrendi)'
+            status = "(menetrendi)"
             
+        txt = f'{departure["route_number"]} - {departure["terminus"]} - {minutes_until_departure} perc múlva {status} {icon}'
+ 
         print(txt)
 
 while True:
     next_departures, current_time = get_next_departures()
     display_departures(departures=next_departures,current_time=current_time)
     time.sleep(10)
-
